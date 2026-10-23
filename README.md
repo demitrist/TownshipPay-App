@@ -1,3 +1,4 @@
+HEAD
 # TownPay
 
 A **mock** mobile payments + small-business prototype: QR payments, send/receive, inventory and sales. No real backend, no real money, no real security — it should still feel like a finished fintech app.
@@ -66,3 +67,7 @@ docs/             Team, git, and test guides
 - [Git workflow](docs/GIT_WORKFLOW.md)
 - [Manual test checklist](docs/TEST_CHECKLIST.md)
 - [Frozen contracts](docs/CONTRACTS.md)
+=======
+# TownshipPay-App
+Mobile App for Group Project
+3a1d77c80009e44e0c3b94b011847865f27478ac
