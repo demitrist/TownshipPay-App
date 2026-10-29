@@ -7,9 +7,10 @@ import { ScreenContainer, StatusBadge, Button } from '../../components';
 const CHECK_SIZE = spacing.xxl * 2 + spacing.xl;
 
 export default function PaymentSuccessScreen({ navigation, route }) {
-  const amount = route.params?.amount || '0.00';
-  const payee = route.params?.payee || 'Unknown';
-  const transactionId = route.params?.transactionId;
+  const params = route.params || {};
+  const amount = params.amount || '0.00';
+  const payee = params.payee || 'Unknown';
+  const transactionId = params.transactionId;
 
   return (
     <ScreenContainer>

@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii } from '../../theme';
 import { useTransactions } from '../../context/TransactionsContext';
 import { formatMoney } from '../../utils/format';
+import { notify, confirmWithOptions } from '../../utils/notify';
 
 export default function SendMoneyScreen({ navigation, route }) {
   const [payee, setPayee] = useState(
@@ -47,10 +47,7 @@ export default function SendMoneyScreen({ navigation, route }) {
     const paymentAmount = Number(amountText);
 
     if (!recipientName) {
-      Alert.alert(
-        'Missing Recipient',
-        'Please enter the recipient name.'
-      );
+      notify('Missing Recipient', 'Please enter the recipient name.');
       return;
     }
 
@@ -59,18 +56,12 @@ export default function SendMoneyScreen({ navigation, route }) {
       !Number.isFinite(paymentAmount) ||
       paymentAmount <= 0
     ) {
-      Alert.alert(
-        'Invalid Amount',
-        'Please enter a valid amount greater than R0.00, with no more than two decimal places.'
-      );
+      notify('Invalid Amount', 'Please enter a valid amount greater than R0.00, with no more than two decimal places.');
       return;
     }
 
     if (paymentAmount > balance) {
-      Alert.alert(
-        'Insufficient Demo Balance',
-        'You do not have enough demo funds for this payment.'
-      );
+      notify('Insufficient Demo Balance', 'You do not have enough demo funds for this payment.');
       return;
     }
 
@@ -89,7 +80,7 @@ export default function SendMoneyScreen({ navigation, route }) {
         note: note.trim(),
       });
 
-      Alert.alert(
+      confirmWithOptions(
         'Mock Payment Recorded',
         `${formatMoney(transaction.amount)} sent to ${recipientName} (demo only).\n\nStatus: ${transaction.status.toUpperCase()}`,
         [
@@ -103,10 +94,7 @@ export default function SendMoneyScreen({ navigation, route }) {
       submittingRef.current = false;
       setIsSubmitting(false);
 
-      Alert.alert(
-        'Payment Error',
-        'Unable to record this mock payment.'
-      );
+      notify('Payment Error', 'Unable to record this mock payment.');
     }
   };
 

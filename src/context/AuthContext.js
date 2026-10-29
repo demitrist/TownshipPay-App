@@ -39,9 +39,15 @@ export function AuthProvider({ children }) {
         const session = await storageGet(STORAGE_KEYS.SESSION);
         if (!mounted) return;
         if (rawUser) {
-          const parsed = JSON.parse(rawUser);
-          setUser(parsed);
-          setIsAuthenticated(session === '1');
+          try {
+            const parsed = JSON.parse(rawUser);
+            setUser(parsed);
+            setIsAuthenticated(session === '1');
+          } catch (parseError) {
+            // Corrupted user data, start fresh
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         }
       } catch (_error) {
         if (mounted) {

@@ -18,23 +18,31 @@ export function TransactionsProvider({ children }) {
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {                                           // Load saved transactions and connection mode
+  useEffect(() => {
     async function loadData() {
       try {
-      const savedData = await AsyncStorage.getItem(STORAGE_KEY);              
+        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
         if (savedData) {
-          const parsedData = JSON.parse(savedData);
+          try {
+            const parsedData = JSON.parse(savedData);
 
-          if (Array.isArray(parsedData.transactions)) {
-            setTransactions(parsedData.transactions);
-          }
+            if (Array.isArray(parsedData.transactions)) {
+              setTransactions(parsedData.transactions);
+            }
 
-          if (typeof parsedData.isOnline === 'boolean') {
-            setIsOnline(parsedData.isOnline);
+            if (typeof parsedData.isOnline === 'boolean') {
+              setIsOnline(parsedData.isOnline);
+            }
+          } catch (parseError) {
+            // Corrupted data, start fresh
+            setTransactions([]);
+            setIsOnline(true);
           }
         }
       } catch (error) {
-        console.error('Error loading transactions:', error);
+        // Storage error, start fresh
+        setTransactions([]);
+        setIsOnline(true);
       } finally {
         setIsLoading(false);
       }
@@ -44,7 +52,7 @@ export function TransactionsProvider({ children }) {
   }, []);
 
  
-  useEffect(() => {                                    // Save transactions when data changes
+  useEffect(() => {
     if (isLoading) {
       return;
     }
@@ -59,7 +67,7 @@ export function TransactionsProvider({ children }) {
           })
         );
       } catch (error) {
-        console.error('Error saving transactions:', error);
+        // Silently fail on save error to not disrupt UX
       }
     }
 

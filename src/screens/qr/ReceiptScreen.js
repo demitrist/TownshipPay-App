@@ -14,7 +14,8 @@ import { useTransactions } from '../../context/TransactionsContext';
 
 export default function ReceiptScreen({ navigation, route }) {
   const { getTransactionById } = useTransactions();
-  const txn = getTransactionById(route.params?.transactionId);
+  const params = route.params || {};
+  const txn = getTransactionById(params.transactionId);
 
   if (!txn) {
     return (

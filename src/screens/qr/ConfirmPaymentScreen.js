@@ -9,10 +9,11 @@ const VALID_SOURCES = ['qr', 'send', 'receive', 'sale'];
 
 export default function ConfirmPaymentScreen({ navigation, route }) {
   const { addTransaction } = useTransactions();
-  const amount = route.params?.amount || '0.00';
-  const payee = route.params?.payee || 'Unknown';
-  const source = VALID_SOURCES.includes(route.params?.source)
-    ? route.params.source
+  const params = route.params || {};
+  const amount = params.amount || '0.00';
+  const payee = params.payee || 'Unknown';
+  const source = VALID_SOURCES.includes(params.source)
+    ? params.source
     : 'qr';
   const [submitting, setSubmitting] = useState(false);
 

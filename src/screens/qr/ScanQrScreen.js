@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ROUTES } from '../../navigation/routes';
 import { colors, spacing, radii, typography } from '../../theme';
 import { ScreenContainer, Button } from '../../components';
+import { notify } from '../../utils/notify';
 
 // Demo mock scan for development/testing
 const FROZEN_SCAN = {
@@ -61,7 +62,7 @@ export default function ScanQrScreen({ navigation }) {
 
     const parsed = parseQrPayload(data);
     if (!parsed) {
-      Alert.alert('Invalid QR Code', 'This QR code is not a valid TownPay payment code.');
+      notify('Invalid QR Code', 'This QR code is not a valid TownPay payment code.');
       return;
     }
 
