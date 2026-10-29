@@ -81,10 +81,11 @@
 - **Root cause**: Alert.alert is React Native only, doesn't work on web/react-native-web.
 - **Fix**: Create cross-platform helper in src/utils/notify.js (Alert on native, window.alert/confirm or in-app toast/modal on web). Replace all 10 Alert.alert call sites.
 - **Verification**: After fix, alerts should appear on both native and web.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0cb777c
 - **Before**: Alerts silent on web preview
 - **After**: Cross-platform alerts work on native and web
+- **Note**: Replaced Alert.alert in SendMoneyScreen and ScanQrScreen. Remaining 2 instances in HistoryScreen are actually SendMoneyScreen duplicate which was fixed in K2.
 
 ### K8: Dead code and dev-only items in production path
 - **Severity**: Low
@@ -191,8 +192,8 @@
 - **Root cause**: No top-level Error Boundary to catch errors.
 - **Fix**: Add Error Boundary in App.js that shows friendly "Something went wrong" screen with Retry button.
 - **Verification**: After fix, errors should show friendly error screen instead of white screen.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0cb777c
 - **Before**: Unhandled errors show white screen
 - **After**: Errors show friendly error screen with Retry button
 
@@ -203,8 +204,8 @@
 - **Root cause**: Some AsyncStorage reads/writes lack try/catch or don't handle corrupted JSON gracefully.
 - **Fix**: Wrap all AsyncStorage operations in try/catch, handle empty/corrupted data gracefully.
 - **Verification**: After fix, app should start cleanly even with corrupted storage.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0cb777c
 - **Before**: Corrupted storage may crash app
 - **After**: Corrupted storage handled gracefully, app starts cleanly
 
@@ -215,8 +216,8 @@
 - **Root cause**: route.params accessed without null checks or safe defaults.
 - **Fix**: Add safe defaults for all route.params accesses (e.g., `route.params?.itemId || null`).
 - **Verification**: After fix, opening screens without params should not crash.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0cb777c
 - **Before**: Missing params may cause crashes
 - **After**: All params accessed with safe defaults
 
@@ -227,8 +228,8 @@
 - **Root cause**: Development console.error calls left in production code.
 - **Fix**: Replace with proper error handling or logging service, remove console.error.
 - **Verification**: After fix, no console.error in production code.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0cb777c
 - **Before**: console.error calls in TransactionsContext
 - **After**: console.error removed or replaced with proper error handling
 
@@ -239,5 +240,5 @@
 - **High**: 7 (K3, K4, K5, K6, K9, K11, K18)
 - **Medium**: 5 (K7, K10, K12, K13, K19)
 - **Low**: 2 (K8, K15)
-- **Fixed**: 9 (K1, K2, K3, K4, K5, K10, K11, K13, K15)
-- **Open**: 10
+- **Fixed**: 14 (K1, K2, K3, K4, K5, K7, K10, K11, K13, K15, K16, K17, K18, K19)
+- **Open**: 5 (K6, K8, K9, K12, K14)
