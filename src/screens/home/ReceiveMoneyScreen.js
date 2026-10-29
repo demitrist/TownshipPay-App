@@ -1,275 +1,238 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Switch,
+  KeyboardAvoidingView,
+  Platform,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 
 import { colors, spacing, radii } from '../../theme';
 import { ROUTES } from '../../navigation/routes';
-import BalanceCard from '../../components/BalanceCard';
 import { useTransactions } from '../../context/TransactionsContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/format';
 
-export default function HomeScreen({ navigation }) {
-  const {
-    transactions,
-    balance,
-    isOnline,
-    toggleOnline,
-    syncPendingTransactions,
-    pendingCount,
-  } = useTransactions();
+export default function ReceiveMoneyScreen({ navigation }) {
+  const { user } = useAuth();
+  const { addTransaction, balance } = useTransactions();
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [amountError, setAmountError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const recentTransactions = transactions.slice(0, 4);
+  const submittingRef = useRef(false);
+
+  const payId = user?.phone ?? user?.email ?? 'you@momo';
+  const qrValue = `townpay://pay?to=${encodeURIComponent(payId)}`;
+
+  const validateAmount = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setAmountError('');
+      return true;
+    }
+
+    const num = Number(trimmed);
+    if (isNaN(num) || num <= 0) {
+      setAmountError('Amount must be greater than R0.00');
+      return false;
+    }
+
+    if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+      setAmountError('Amount can have at most 2 decimal places');
+      return false;
+    }
+
+    if (num > 100000) {
+      setAmountError('Amount exceeds maximum limit');
+      return false;
+    }
+
+    setAmountError('');
+    return true;
+  };
+
+  const handleAmountChange = (value) => {
+    setAmount(value);
+    validateAmount(value);
+  };
+
+  const handleRequestPayment = () => {
+    if (submittingRef.current) {
+      return;
+    }
+
+    const amountText = amount.trim();
+    if (amountText && !validateAmount(amountText)) {
+      return;
+    }
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const requestAmount = amountText ? Number(amountText) : 0;
+
+      // Record a pending incoming transaction
+      const transaction = addTransaction({
+        type: 'credit',
+        amount: requestAmount,
+        currency: 'ZAR',
+        source: 'receive',
+        counterparty: 'Payment request',
+        note: note.trim() || 'Requested via QR code',
+        status: 'pending',
+      });
+
+      setShowSuccess(true);
+    } catch (error) {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleShare = () => {
+    Share.share({
+      message: `Pay me using TownPay: ${qrValue}`,
+    });
+  };
+
+  const handleBackToHome = () => {
+    setShowSuccess(false);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+    setAmount('');
+    setNote('');
+    setAmountError('');
+    navigation.goBack();
+  };
+
+  if (showSuccess) {
+    return (
+      <View style={styles.successContainer}>
+        <View style={styles.successIcon}>
+          <Ionicons name="checkmark-circle" size={80} color={colors.success} />
+        </View>
+        <Text style={styles.successTitle}>Payment Request Created</Text>
+        <Text style={styles.successMessage}>
+          {amount.trim()
+            ? `Request for ${formatMoney(Number(amount))} has been recorded.`
+            : 'Payment request has been recorded.'}
+        </Text>
+        <Text style={styles.successSub}>
+          The payer can scan your QR code to complete the payment.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackToHome}
+        >
+          <Text style={styles.backButtonText}>Back to Home</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Welcome Section */}
-      <View style={styles.welcomeSection}>
-        <Text style={styles.greeting}>
-          Welcome to TownPay
-        </Text>
-
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.heading}>Receive Money</Text>
         <Text style={styles.subtitle}>
-          Manage your payments and track your business.
+          Show this QR code or request a specific amount.
         </Text>
-      </View>
 
-      {/* Balance Card */}
-      <BalanceCard
-        label="Demo Balance"
-        amount={balance}
-        footer="Your simulated TownPay wallet"
-      />
-
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>
-        Quick Actions
-      </Text>
-
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() =>
-            navigation.navigate(ROUTES.SEND_MONEY)
-          }
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="arrow-up-outline"
-              size={26}
-              color={colors.primary}
+        {/* QR Code Section */}
+        <View style={styles.qrCard}>
+          <View style={styles.qrContainer}>
+            <QRCode
+              value={qrValue}
+              size={200}
+              backgroundColor={colors.white}
+              color={colors.text}
             />
           </View>
+          <Text style={styles.merchantName}>{user?.name || 'You'}</Text>
+          <Text style={styles.merchantId}>{payId}</Text>
 
-          <Text style={styles.actionText}>
-            Send Money
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-outline" size={20} color={colors.primary} />
+            <Text style={styles.shareButtonText}>Share my code</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() =>
-            navigation.navigate(ROUTES.RECEIVE_MONEY)
-          }
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="arrow-down-outline"
-              size={26}
-              color={colors.primary}
+        {/* Request Amount Form */}
+        <View style={styles.formCard}>
+          <Text style={styles.sectionTitle}>Request Specific Amount (Optional)</Text>
+
+          <Text style={styles.label}>Amount (ZAR)</Text>
+          <View style={styles.amountInputContainer}>
+            <Text style={styles.currencyPrefix}>R</Text>
+            <TextInput
+              style={styles.amountInput}
+              placeholder="0.00"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+              value={amount}
+              onChangeText={handleAmountChange}
+              maxLength={12}
             />
           </View>
+          {amountError ? <Text style={styles.error}>{amountError}</Text> : null}
 
-          <Text style={styles.actionText}>
-            Receive Money
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Online / Offline Status */}
-      <Text style={styles.sectionTitle}>
-        Connection Status
-      </Text>
-
-      <View style={styles.statusCard}>
-        <View style={styles.statusRow}>
-          <View style={styles.statusInfo}>
-            <Ionicons
-              name={
-                isOnline
-                  ? 'wifi-outline'
-                  : 'cloud-offline-outline'
-              }
-              size={24}
-              color={
-                isOnline
-                  ? colors.onlineBanner
-                  : colors.offlineBanner
-              }
-            />
-
-            <View style={styles.statusTextContainer}>
-              <Text style={styles.statusTitle}>
-                {isOnline
-                  ? 'Online Mode'
-                  : 'Offline Mode'}
-              </Text>
-
-              <Text style={styles.statusDescription}>
-                {isOnline
-                  ? 'Mock payments can be synced.'
-                  : 'New mock payments will be pending.'}
-              </Text>
-            </View>
-          </View>
-
-          <Switch
-            value={isOnline}
-            onValueChange={toggleOnline}
-            trackColor={{
-              false: colors.border,
-              true: colors.secondary,
-            }}
-            thumbColor={colors.surface}
+          <Text style={styles.label}>Note (Optional)</Text>
+          <TextInput
+            style={[styles.input, styles.noteInput]}
+            placeholder="What is this payment for?"
+            placeholderTextColor={colors.textMuted}
+            value={note}
+            onChangeText={setNote}
+            multiline
+            maxLength={150}
+            textAlignVertical="top"
           />
         </View>
 
-        {/* Sync Pending Transactions */}
-        <View style={styles.syncSection}>
-          <Text style={styles.pendingText}>
-            {pendingCount} pending transaction(s)
+        {/* Request Button */}
+        <TouchableOpacity
+          style={[
+            styles.requestButton,
+            isSubmitting && styles.disabledButton,
+          ]}
+          onPress={handleRequestPayment}
+          disabled={isSubmitting}
+        >
+          <Ionicons
+            name="arrow-down-outline"
+            size={20}
+            color={colors.textOnPrimary}
+          />
+          <Text style={styles.requestButtonText}>
+            {isSubmitting ? 'Creating Request...' : 'Request Payment'}
           </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.syncButton,
-              (!isOnline || pendingCount === 0) &&
-                styles.disabledButton,
-            ]}
-            onPress={syncPendingTransactions}
-            disabled={!isOnline || pendingCount === 0}
-          >
-            <Ionicons
-              name="sync-outline"
-              size={18}
-              color={colors.textOnPrimary}
-            />
-
-            <Text style={styles.syncButtonText}>
-              Sync Now
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Recent Transactions */}
-      <Text style={styles.sectionTitle}>
-        Recent Transactions
-      </Text>
-
-      <View style={styles.transactionCard}>
-        {recentTransactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="receipt-outline"
-              size={40}
-              color={colors.textMuted}
-            />
-
-            <Text style={styles.emptyTitle}>
-              No transactions yet
-            </Text>
-
-            <Text style={styles.emptyDescription}>
-              Your recent payments will appear here.
-            </Text>
-          </View>
-        ) : (
-          recentTransactions.map(
-            (transaction, index) => (
-              <View
-                key={transaction.id}
-                style={[
-                  styles.transactionRow,
-                  index !==
-                    recentTransactions.length - 1 &&
-                    styles.transactionDivider,
-                ]}
-              >
-                <View style={styles.transactionIcon}>
-                  <Ionicons
-                    name={
-                      transaction.type === 'credit'
-                        ? 'arrow-down-outline'
-                        : 'arrow-up-outline'
-                    }
-                    size={22}
-                    color={colors.primary}
-                  />
-                </View>
-
-                <View style={styles.transactionDetails}>
-                  <Text
-                    style={styles.transactionName}
-                    numberOfLines={1}
-                  >
-                    {transaction.counterparty}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.transactionStatus,
-                      {
-                        color:
-                          transaction.status === 'synced'
-                            ? colors.statusSynced
-                            : colors.statusPending,
-                      },
-                    ]}
-                  >
-                    {transaction.status === 'synced'
-                      ? 'Synced'
-                      : 'Pending'}
-                  </Text>
-                </View>
-
-                <Text
-                  style={[
-                    styles.transactionAmount,
-                    {
-                      color:
-                        transaction.type === 'credit'
-                          ? colors.success
-                          : colors.text,
-                    },
-                  ]}
-                >
-                  {transaction.type === 'credit'
-                    ? '+'
-                    : '-'}
-                  {formatMoney(transaction.amount)}
-                </Text>
-              </View>
-            )
-          )
-        )}
-      </View>
-
-      {/* Demo Disclaimer */}
-      <Text style={styles.disclaimer}>
-        Demo application only. No real money is transferred.
-      </Text>
-    </ScrollView>
+        <Text style={styles.disclaimer}>
+          Demo application only. No real money is transferred.
+        </Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -278,212 +241,184 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-
-  welcomeSection: {
-    marginBottom: spacing.xl,
-  },
-
-  greeting: {
-    fontSize: 23,
+  heading: {
+    fontSize: 25,
     fontWeight: '700',
     color: colors.text,
   },
-
   subtitle: {
     fontSize: 14,
     color: colors.textMuted,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
   },
-
+  qrCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  qrContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radii.md,
+    marginBottom: spacing.lg,
+  },
+  merchantName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  merchantId: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  shareButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
-
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-
-  actionButton: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  actionIcon: {
-    backgroundColor: colors.background,
-    width: 54,
-    height: 54,
-    borderRadius: radii.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: spacing.sm,
   },
-
-  actionText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  statusCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: radii.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
   },
-
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  statusInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  statusTextContainer: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-
-  statusTitle: {
-    fontSize: 16,
+  currencyPrefix: {
+    fontSize: 19,
     fontWeight: '700',
     color: colors.text,
+    marginRight: spacing.sm,
   },
-
-  statusDescription: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-
-  syncSection: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  pendingText: {
-    fontSize: 13,
-    color: colors.textMuted,
+  amountInput: {
     flex: 1,
+    paddingVertical: spacing.md,
+    fontSize: 19,
+    color: colors.text,
   },
-
-  syncButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-
-  disabledButton: {
-    opacity: 0.45,
-  },
-
-  syncButtonText: {
-    color: colors.textOnPrimary,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-
-  transactionCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
+  input: {
     borderWidth: 1,
     borderColor: colors.border,
-  },
-
-  transactionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
-
-  transactionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  noteInput: {
+    height: 85,
   },
-
-  transactionIcon: {
-    width: 42,
-    height: 42,
+  error: {
+    color: colors.danger,
+    fontSize: 12,
+    marginBottom: spacing.md,
+  },
+  requestButton: {
+    backgroundColor: colors.primary,
     borderRadius: radii.lg,
-    backgroundColor: colors.background,
+    paddingVertical: spacing.lg,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
-
-  transactionDetails: {
-    flex: 1,
-  },
-
-  transactionName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-
-  transactionStatus: {
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-
-  transactionAmount: {
-    fontSize: 14,
+  requestButtonText: {
+    color: colors.textOnPrimary,
+    fontSize: 16,
     fontWeight: '700',
   },
-
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
+  disabledButton: {
+    opacity: 0.5,
   },
-
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: spacing.md,
-  },
-
-  emptyDescription: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
-
   disclaimer: {
     textAlign: 'center',
     color: colors.textMuted,
-    fontSize: 11,
-    marginTop: spacing.xl,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  successContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  successIcon: {
+    marginBottom: spacing.lg,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  successSub: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  backButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.lg,
+  },
+  backButtonText: {
+    color: colors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
