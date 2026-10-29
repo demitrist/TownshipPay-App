@@ -120,7 +120,7 @@
 - **Fix**: Change `attempts >= 3` to `attempts >= 5` in PinScreen.js.
 - **Verification**: After fix, should lock out after 5 wrong attempts.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: 25e19d2
 - **Before**: PIN locks after 3 wrong attempts
 - **After**: PIN locks after 5 wrong attempts
 
@@ -156,7 +156,7 @@
 - **Fix**: Update validation to enforce SA format: either 10 digits starting with 0, or +27 followed by 9 digits.
 - **Verification**: After fix, only valid SA phone formats should pass.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: 25e19d2
 - **Before**: Phone validation allows various formats
 - **After**: Phone validation enforces SA format (10 digits starting 0, or +27 + 9 digits)
 
@@ -180,7 +180,7 @@
 - **Fix**: Rename to `InventoryScreen` (capital S).
 - **Verification**: After fix, component name matches file name convention.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: 25e19d2
 - **Before**: Component named `Inventoryscreen`
 - **After**: Component named `InventoryScreen`
 
