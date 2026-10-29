@@ -12,7 +12,7 @@ import { ROUTES } from '../../navigation/routes';
 import { useInventory, isLowStock } from '../../context/InventoryContext';
 import { formatMoney } from '../../utils/format';
  
-export default function Inventoryscreen({ navigation }) {
+export default function InventoryScreen({ navigation }) {
   const { products, lowStockProducts } = useInventory();
  
   return (

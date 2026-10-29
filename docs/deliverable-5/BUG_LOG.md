@@ -9,8 +9,8 @@
 - **Root cause**: File is byte-identical to HomeScreen.js, even exports `HomeScreen` instead of `ReceiveMoneyScreen`.
 - **Fix**: Replace with real Receive Money screen that shows merchant QR code, allows optional amount/note entry for payment requests, records pending incoming transactions, and provides Share action.
 - **Verification**: After fix, Receive Money should show QR code and form, not Home dashboard.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: Tapping "Receive Money" reloads Home dashboard
 - **After**: Tapping "Receive Money" shows merchant QR code with request form
 
@@ -21,8 +21,8 @@
 - **Root cause**: File is byte-identical to SendMoneyScreen.js, exports `SendMoneyScreen` instead of `HistoryScreen`.
 - **Fix**: Replace with real History screen that lists all transactions (newest first), supports filters (All/Sent/Received/Pending/Synced), text search, opens receipt on tap, shows sales from till, and displays EmptyState when no matches.
 - **Verification**: After fix, History tab should show transaction list with filters and search.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: History tab shows Send Money payment form
 - **After**: History tab shows transaction list with filters and search
 
@@ -33,8 +33,8 @@
 - **Root cause**: Nested duplicate project folder TownPay/ contains the real QR implementations while the actual src/screens/qr/ has placeholders.
 - **Fix**: Copy finished screens from TownPay/src/screens/qr/ into src/screens/qr/, diff to keep better version, delete nested TownPay/ folder after confirming no unique files remain.
 - **Verification**: After fix, src/screens/qr/ should contain real implementations, TownPay/ folder should be deleted.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: src/screens/qr/ contains placeholder screens, real code in nested TownPay/ folder
 - **After**: src/screens/qr/ contains real implementations, TownPay/ folder deleted
 
@@ -45,8 +45,8 @@
 - **Root cause**: QR screens need `react-native-svg` and `react-native-qrcode-svg` which are not in package.json.
 - **Fix**: Install with `npx expo install react-native-svg react-native-qrcode-svg`.
 - **Verification**: After install, dependencies should be in package.json and app should still boot.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: package.json missing react-native-svg and react-native-qrcode-svg
 - **After**: Dependencies installed and listed in package.json
 
@@ -57,8 +57,8 @@
 - **Root cause**: Implementation is placeholder with mock button only.
 - **Fix**: Add real scanning with expo-camera (CameraView with onBarcodeScanned), request permission, show friendly screen if denied with "Open settings" action, stop scanning after first valid read to avoid duplicate payments. Keep mock button as "Demo scan" fallback.
 - **Verification**: After fix, should request camera permission and show live camera feed for scanning.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: Scan QR has only "Mock a successful scan" button
 - **After**: Scan QR has real camera scanning with permission handling, plus "Demo scan" fallback
 
@@ -119,8 +119,8 @@
 - **Root cause**: Lockout threshold set to 3 instead of 5.
 - **Fix**: Change `attempts >= 3` to `attempts >= 5` in PinScreen.js.
 - **Verification**: After fix, should lock out after 5 wrong attempts.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: PIN locks after 3 wrong attempts
 - **After**: PIN locks after 5 wrong attempts
 
@@ -131,8 +131,8 @@
 - **Root cause**: HistoryStack only has History screen, missing Receipt screen that's in QrStack.
 - **Fix**: Add Receipt screen to HistoryStack or ensure navigation to Receipt from History uses correct stack (QrStack).
 - **Verification**: After fix, should be able to open receipt from History.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: Receipt not accessible from History
 - **After**: Receipt navigation works from History
 
@@ -155,8 +155,8 @@
 - **Root cause**: PHONE_RE pattern `/^[0-9+\s()-]{10,}$/` allows spaces, parentheses, dashes anywhere, not strictly SA format (10 digits starting 0 or +27).
 - **Fix**: Update validation to enforce SA format: either 10 digits starting with 0, or +27 followed by 9 digits.
 - **Verification**: After fix, only valid SA phone formats should pass.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: Phone validation allows various formats
 - **After**: Phone validation enforces SA format (10 digits starting 0, or +27 + 9 digits)
 
@@ -179,8 +179,8 @@
 - **Root cause**: Typo in component name.
 - **Fix**: Rename to `InventoryScreen` (capital S).
 - **Verification**: After fix, component name matches file name convention.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: Component named `Inventoryscreen`
 - **After**: Component named `InventoryScreen`
 
@@ -239,5 +239,5 @@
 - **High**: 7 (K3, K4, K5, K6, K9, K11, K18)
 - **Medium**: 5 (K7, K10, K12, K13, K19)
 - **Low**: 2 (K8, K15)
-- **Fixed**: 0
-- **Open**: 19
+- **Fixed**: 9 (K1, K2, K3, K4, K5, K10, K11, K13, K15)
+- **Open**: 10

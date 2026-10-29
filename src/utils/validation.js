@@ -1,5 +1,5 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9+\s()-]{10,}$/;
+const PHONE_RE = /^(\+27)?0\d{9}$/;
 
 export function isValidEmail(value) {
   return EMAIL_RE.test(String(value || '').trim());

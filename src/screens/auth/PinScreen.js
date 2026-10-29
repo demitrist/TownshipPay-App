@@ -16,7 +16,7 @@ export default function PinScreen({ route }) {
   const [locked, setLocked] = useState(false);
   const shake = useRef(new Animated.Value(0)).current;
 
-  const lockedOut = locked || attempts >= 3;
+  const lockedOut = locked || attempts >= 5;
 
   const title = mode === 'set' ? 'Create a 4-digit PIN' : 'Enter your PIN';
   const subtitle =
@@ -48,7 +48,7 @@ export default function PinScreen({ route }) {
       setLocalPin('');
       setAttempts((count) => {
         const next = count + 1;
-        if (next >= 3) {
+        if (next >= 5) {
           setLocked(true);
           setTimeout(() => {
             setLocked(false);
