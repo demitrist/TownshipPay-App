@@ -70,7 +70,7 @@
 - **Fix**: Audit balance logic to make it explicit: sent payments decrease balance (Pending or Synced), received/QR-receive and till sales increase balance, QR payments by user decrease balance. Make balance a pure derivation from transaction list (single source of truth).
 - **Verification**: After fix, all transaction types should correctly affect balance.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: d1655aa
 - **Before**: Balance updates inconsistently for different transaction types
 - **After**: Balance correctly derived from all transactions with explicit rules
 
@@ -95,7 +95,7 @@
 - **Fix**: Remove or hide dev-only items: delete nested TownPay/ folder after K3, consider removing FeaturePlaceholder component if no longer needed, hide or remove ComponentShowcase from Profile in production builds.
 - **Verification**: After fix, no nested duplicate folders, dev-only screens not accessible in production.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: d1655aa
 - **Before**: Nested TownPay/ folder exists, ComponentShowcase accessible from Profile
 - **After**: TownPay/ folder deleted (done in K3), ComponentShowcase removed from Profile
 
@@ -109,7 +109,7 @@
 - **Fix**: Add AsyncStorage persistence for products and sales similar to TransactionsContext.
 - **Verification**: After fix, products and sales should persist across app restarts.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: d1655aa
 - **Before**: Inventory data lost on app restart
 - **After**: Inventory data persists via AsyncStorage
 
@@ -145,7 +145,7 @@
 - **Fix**: Ensure navigation path is correct for deep linking to History tab's History screen.
 - **Verification**: After fix, button should navigate to History screen.
 - **Status**: Fixed
-- **Commit**: (to be committed)
+- **Commit**: d1655aa
 - **Before**: "See sales in history" navigation fails or goes to wrong screen
 - **After**: Navigation correctly opens History screen
 
@@ -240,5 +240,13 @@
 - **High**: 7 (K3, K4, K5, K6, K9, K11, K18)
 - **Medium**: 5 (K7, K10, K12, K13, K19)
 - **Low**: 2 (K8, K15)
-- **Fixed**: 15 (K1, K2, K3, K4, K5, K7, K10, K11, K13, K14, K15, K16, K17, K18, K19)
-- **Open**: 4 (K6, K8, K9, K12)
+- **Fixed**: 19 (all issues)
+- **Open**: 0
+
+## Phase 4 Complete
+
+All validation, edge cases, and UX issues have been addressed:
+- K6: Balance calculation rules made explicit
+- K8: Component showcase removed from Profile
+- K9: Inventory persistence added
+- K12: SalesSummary navigation fixed
