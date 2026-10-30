@@ -1,5 +1,8 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
+
+const STORAGE_KEY = '@townpay_inventory';
 
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
@@ -26,6 +29,57 @@ const InventoryContext = createContext(null);
 export function InventoryProvider({ children }) {
   const [products, setProducts] = useState(MOCK_PRODUCTS);
   const [sales, setSales] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load persisted inventory data
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            if (Array.isArray(parsedData.products)) {
+              setProducts(parsedData.products);
+            }
+            if (Array.isArray(parsedData.sales)) {
+              setSales(parsedData.sales);
+            }
+          } catch (parseError) {
+            // Corrupted data, start with defaults
+            setProducts(MOCK_PRODUCTS);
+            setSales([]);
+          }
+        }
+      } catch (error) {
+        // Storage error, start with defaults
+        setProducts(MOCK_PRODUCTS);
+        setSales([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Save inventory data when it changes
+  useEffect(() => {
+    if (isLoading) return;
+
+    async function saveData() {
+      try {
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ products, sales })
+        );
+      } catch (error) {
+        // Silently fail on save error
+      }
+    }
+
+    saveData();
+  }, [products, sales, isLoading]);
 
   const getProduct = useCallback((id) => products.find((p) => p.id === id), [products]);
 
@@ -69,8 +123,8 @@ export function InventoryProvider({ children }) {
   const lowStockProducts = useMemo(() => products.filter(isLowStock), [products]);
 
   const value = useMemo(
-    () => ({ products, sales, lowStockProducts, getProduct, addProduct, updateProduct, completeSale }),
-    [products, sales, lowStockProducts, getProduct, addProduct, updateProduct, completeSale]
+    () => ({ products, sales, lowStockProducts, getProduct, addProduct, updateProduct, completeSale, isLoading }),
+    [products, sales, lowStockProducts, getProduct, addProduct, updateProduct, completeSale, isLoading]
   );
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;

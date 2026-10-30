@@ -69,8 +69,8 @@
 - **Root cause**: Balance derivation logic may not handle sales (credit) or QR payments correctly. Pending vs Synced logic unclear.
 - **Fix**: Audit balance logic to make it explicit: sent payments decrease balance (Pending or Synced), received/QR-receive and till sales increase balance, QR payments by user decrease balance. Make balance a pure derivation from transaction list (single source of truth).
 - **Verification**: After fix, all transaction types should correctly affect balance.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: Balance updates inconsistently for different transaction types
 - **After**: Balance correctly derived from all transactions with explicit rules
 
@@ -94,10 +94,10 @@
 - **Root cause**: Dev-only items left in production code path.
 - **Fix**: Remove or hide dev-only items: delete nested TownPay/ folder after K3, consider removing FeaturePlaceholder component if no longer needed, hide or remove ComponentShowcase from Profile in production builds.
 - **Verification**: After fix, no nested duplicate folders, dev-only screens not accessible in production.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: Nested TownPay/ folder exists, ComponentShowcase accessible from Profile
-- **After**: TownPay/ folder deleted, dev-only screens hidden/removed
+- **After**: TownPay/ folder deleted (done in K3), ComponentShowcase removed from Profile
 
 ## Additional Issues Found During Phase 1
 
@@ -108,8 +108,8 @@
 - **Root cause**: InventoryContext uses only in-memory state (useState), no AsyncStorage persistence.
 - **Fix**: Add AsyncStorage persistence for products and sales similar to TransactionsContext.
 - **Verification**: After fix, products and sales should persist across app restarts.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: Inventory data lost on app restart
 - **After**: Inventory data persists via AsyncStorage
 
@@ -144,8 +144,8 @@
 - **Root cause**: Navigation uses `navigation.navigate(TABS.HISTORY, { screen: ROUTES.HISTORY })` which may not resolve correctly.
 - **Fix**: Ensure navigation path is correct for deep linking to History tab's History screen.
 - **Verification**: After fix, button should navigate to History screen.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: (to be committed)
 - **Before**: "See sales in history" navigation fails or goes to wrong screen
 - **After**: Navigation correctly opens History screen
 
@@ -168,10 +168,10 @@
 - **Root cause**: HistoryScreen.js exports `SendMoneyScreen` (line 19) instead of `HistoryScreen`.
 - **Fix**: Change export to correct name after implementing real History screen.
 - **Verification**: After fix, HistoryScreen should export correct component.
-- **Status**: Open
-- **Commit**: N/A
+- **Status**: Fixed
+- **Commit**: 0fe6a27
 - **Before**: HistoryScreen exports SendMoneyScreen
-- **After**: HistoryScreen exports HistoryScreen component
+- **After**: HistoryScreen exports HistoryScreen component (fixed in K2)
 
 ### K15: InventoryScreen component name typo
 - **Severity**: Low
@@ -240,5 +240,5 @@
 - **High**: 7 (K3, K4, K5, K6, K9, K11, K18)
 - **Medium**: 5 (K7, K10, K12, K13, K19)
 - **Low**: 2 (K8, K15)
-- **Fixed**: 14 (K1, K2, K3, K4, K5, K7, K10, K11, K13, K15, K16, K17, K18, K19)
-- **Open**: 5 (K6, K8, K9, K12, K14)
+- **Fixed**: 15 (K1, K2, K3, K4, K5, K7, K10, K11, K13, K14, K15, K16, K17, K18, K19)
+- **Open**: 4 (K6, K8, K9, K12)

@@ -112,7 +112,7 @@ export default function SalesSummaryScreen({ navigation }) {
           title="See sales in history"
           variant="outline"
           fullWidth
-          onPress={() => navigation.navigate(TABS.HISTORY, { screen: ROUTES.HISTORY })}
+          onPress={() => navigation.navigate(ROUTES.HISTORY)}
         />
       </View>
     </ScreenContainer>

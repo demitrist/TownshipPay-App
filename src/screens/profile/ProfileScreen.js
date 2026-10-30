@@ -26,12 +26,6 @@ export default function ProfileScreen({ navigation }) {
 
       <Card>
         <ListItem
-          title="Component showcase"
-          subtitle="Dev-only gallery of shared UI"
-          onPress={() => navigation.navigate(ROUTES.COMPONENT_SHOWCASE)}
-        />
-        <Divider />
-        <ListItem
           title="Mock session"
           subtitle="Logout returns you to the login screen"
           showChevron={false}

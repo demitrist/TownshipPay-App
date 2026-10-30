@@ -137,13 +137,19 @@ export function TransactionsProvider({ children }) {
     );
   }, [isOnline]);
 
-  const balance = useMemo(() => {                            // Calculate the mock balance from recorded payments
+  const balance = useMemo(() => {
+    // Balance is derived from all transactions (single source of truth)
+    // Rules:
+    // - Sent payments (debit): decrease balance (Pending or Synced)
+    // - Received/QR-receive and till sales (credit): increase balance (Pending or Synced)
+    // - QR payments by user (debit): decrease balance
+    // - Pending vs Synced only affects status label, not balance calculation
     return transactions.reduce((total, transaction) => {
+      const amount = Number(transaction.amount) || 0;
       if (transaction.type === 'credit') {
-        return total + transaction.amount;
+        return total + amount;
       }
-
-      return total - transaction.amount;
+      return total - amount;
     }, INITIAL_BALANCE);
   }, [transactions]);
 
