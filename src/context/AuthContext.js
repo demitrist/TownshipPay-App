@@ -39,15 +39,9 @@ export function AuthProvider({ children }) {
         const session = await storageGet(STORAGE_KEYS.SESSION);
         if (!mounted) return;
         if (rawUser) {
-          try {
-            const parsed = JSON.parse(rawUser);
-            setUser(parsed);
-            setIsAuthenticated(session === '1');
-          } catch (parseError) {
-            // Corrupted user data, start fresh
-            setUser(null);
-            setIsAuthenticated(false);
-          }
+          const parsed = JSON.parse(rawUser);
+          setUser(parsed);
+          setIsAuthenticated(session === '1');
         }
       } catch (_error) {
         if (mounted) {
@@ -100,9 +94,17 @@ export function AuthProvider({ children }) {
       throw new Error('Password must be at least 6 characters.');
     }
 
-    const existing = user || {
+    // Only reuse the stored profile when the identifier matches it; otherwise a
+    // different person logging in would inherit the previous user's profile.
+    const id = identifier.trim().toLowerCase();
+    const sameUser =
+      user &&
+      (String(user.email || '').toLowerCase() === id ||
+        String(user.phone || '').replace(/\s/g, '') === identifier.trim().replace(/\s/g, ''));
+
+    const existing = sameUser ? user : {
       id: 'usr_demo',
-      name: 'Demo Merchant',
+      name: isValidEmail(identifier) && id !== 'demo@townpay.app' ? 'TownPay Merchant' : 'Demo Merchant',
       email: isValidEmail(identifier) ? identifier.trim().toLowerCase() : 'demo@townpay.app',
       phone: isValidPhone(identifier) ? identifier.trim() : '0821234567',
       pin: DEMO_PIN,

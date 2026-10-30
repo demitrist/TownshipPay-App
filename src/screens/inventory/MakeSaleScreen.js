@@ -60,7 +60,6 @@ export default function MakeSaleScreen({ navigation }) {
     addTransaction({
       type: 'credit',
       amount: res.sale.total,
-      status: 'pending',
       source: 'sale',
       counterparty: 'Walk-in customer',
       note: res.sale.items.map((i) => `${i.qty} × ${i.name}`).join(', '),

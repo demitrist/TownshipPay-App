@@ -1,12 +1,14 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^(\+27)?0\d{9}$/;
+const PHONE_RE = /^\+?[0-9\s()-]+$/;
 
 export function isValidEmail(value) {
   return EMAIL_RE.test(String(value || '').trim());
 }
 
 export function isValidPhone(value) {
-  return PHONE_RE.test(String(value || '').trim());
+  const text = String(value || '').trim();
+  // Only digits/spaces/()/- and an optional leading +, with at least 10 real digits.
+  return PHONE_RE.test(text) && text.replace(/\D/g, '').length >= 10;
 }
 
 export function isValidPassword(value) {

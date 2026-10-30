@@ -1,281 +1,133 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-import { colors, spacing, radii } from '../../theme';
-import { useTransactions } from '../../context/TransactionsContext';
-import { formatMoney } from '../../utils/format';
-import { ROUTES, TABS } from '../../navigation/routes';
+import ScreenContainer from '../../components/ScreenContainer';
+import Card from '../../components/Card';
 import ListItem from '../../components/ListItem';
 import StatusBadge from '../../components/StatusBadge';
 import EmptyState from '../../components/EmptyState';
-import Card from '../../components/Card';
-import Divider from '../../components/Divider';
+import { colors, radii, spacing, typography } from '../../theme';
+import { useTransactions } from '../../context/TransactionsContext';
+import { formatMoney } from '../../utils/format';
+import { formatDay, formatTime } from '../../utils/salesDates';
 
-const FILTERS = {
-  ALL: 'all',
-  SENT: 'sent',
-  RECEIVED: 'received',
-  PENDING: 'pending',
-  SYNCED: 'synced',
-};
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'synced', label: 'Synced' },
+];
 
-export default function HistoryScreen({ navigation }) {
-  const { transactions } = useTransactions();
-  const [filter, setFilter] = useState(FILTERS.ALL);
-  const [searchQuery, setSearchQuery] = useState('');
+// Transaction history list with a status filter (All / Pending / Synced).
+export default function HistoryScreen() {
+  const { transactions, pendingCount, isLoading } = useTransactions();
+  const [filter, setFilter] = useState('all');
 
-  const filteredTransactions = useMemo(() => {
-    let filtered = [...transactions];
-
-    // Apply filter
-    if (filter === FILTERS.SENT) {
-      filtered = filtered.filter((t) => t.type === 'debit');
-    } else if (filter === FILTERS.RECEIVED) {
-      filtered = filtered.filter((t) => t.type === 'credit');
-    } else if (filter === FILTERS.PENDING) {
-      filtered = filtered.filter((t) => t.status === 'pending');
-    } else if (filter === FILTERS.SYNCED) {
-      filtered = filtered.filter((t) => t.status === 'synced');
-    }
-
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.counterparty?.toLowerCase().includes(query) ||
-          t.note?.toLowerCase().includes(query) ||
-          t.id?.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [transactions, filter, searchQuery]);
-
-  const handleTransactionPress = (transaction) => {
-    navigation.navigate(TABS.QR, {
-      screen: ROUTES.RECEIPT,
-      params: { transactionId: transaction.id },
-    });
-  };
-
-  const renderFilterButton = (filterKey, label) => {
-    const isActive = filter === filterKey;
-    return (
-      <TouchableOpacity
-        key={filterKey}
-        style={[
-          styles.filterButton,
-          isActive && styles.filterButtonActive,
-        ]}
-        onPress={() => setFilter(filterKey)}
-      >
-        <Text
-          style={[
-            styles.filterButtonText,
-            isActive && styles.filterButtonTextActive,
-          ]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const visible = useMemo(
+    () => (filter === 'all' ? transactions : transactions.filter((t) => t.status === filter)),
+    [transactions, filter]
+  );
 
   return (
-    <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search-outline"
-          size={20}
-          color={colors.textMuted}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, reference, or note"
-          placeholderTextColor={colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery ? (
-          <TouchableOpacity
-            onPress={() => setSearchQuery('')}
-            style={styles.clearButton}
-          >
-            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
-        ) : null}
+    <ScreenContainer scroll>
+      <View style={styles.filters}>
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <Pressable
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${f.label} transactions`}
+              accessibilityState={{ selected: active }}
+              style={[styles.chip, active && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>{f.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* Filter Pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterContent}
-      >
-        {renderFilterButton(FILTERS.ALL, 'All')}
-        {renderFilterButton(FILTERS.SENT, 'Sent')}
-        {renderFilterButton(FILTERS.RECEIVED, 'Received')}
-        {renderFilterButton(FILTERS.PENDING, 'Pending')}
-        {renderFilterButton(FILTERS.SYNCED, 'Synced')}
-      </ScrollView>
+      <Text style={styles.summary}>
+        {transactions.length} transaction{transactions.length === 1 ? '' : 's'} · {pendingCount} pending
+      </Text>
 
-      {/* Transaction List */}
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredTransactions.length === 0 ? (
+      {isLoading ? (
+        <Text style={styles.summary}>Loading…</Text>
+      ) : visible.length === 0 ? (
+        <Card>
           <EmptyState
             icon="receipt-outline"
-            title={
-              searchQuery
-                ? 'No matching transactions'
-                : 'No transactions yet'
-            }
+            title={filter === 'all' ? 'No transactions yet' : `No ${filter} transactions`}
             message={
-              searchQuery
-                ? 'Try a different search term or filter.'
-                : 'Your payment history will appear here.'
+              filter === 'all'
+                ? 'Payments, received money and sales will appear here.'
+                : 'Try another filter to see your other transactions.'
             }
           />
-        ) : (
-          filteredTransactions.map((transaction, index) => (
-            <View key={transaction.id}>
+        </Card>
+      ) : (
+        visible.map((t) => {
+          const credit = t.type === 'credit';
+          return (
+            <View key={t.id} style={styles.item}>
               <Card padding="sm">
                 <ListItem
-                  title={transaction.counterparty || 'Unknown'}
-                  subtitle={
-                    transaction.note
-                      ? transaction.note
-                      : transaction.source
-                      ? transaction.source.charAt(0).toUpperCase() +
-                        transaction.source.slice(1)
-                      : 'Payment'
+                  title={t.counterparty}
+                  subtitle={`${formatDay(t.createdAt)} · ${formatTime(t.createdAt)}${
+                    t.note ? ` · ${t.note}` : ''
+                  }`}
+                  showChevron={false}
+                  left={
+                    <Ionicons
+                      name={credit ? 'arrow-down-circle-outline' : 'arrow-up-circle-outline'}
+                      size={28}
+                      color={credit ? colors.success : colors.primary}
+                    />
                   }
-                  showChevron
-                  onPress={() => handleTransactionPress(transaction)}
                   right={
-                    <View style={styles.rightContent}>
-                      <Text
-                        style={[
-                          styles.amount,
-                          transaction.type === 'credit'
-                            ? styles.amountCredit
-                            : styles.amountDebit,
-                        ]}
-                      >
-                        {transaction.type === 'credit' ? '+' : '-'}
-                        {formatMoney(transaction.amount)}
+                    <View style={styles.right}>
+                      <Text style={[styles.amount, credit && { color: colors.success }]}>
+                        {credit ? '+' : '-'}
+                        {formatMoney(t.amount)}
                       </Text>
-                      <StatusBadge status={transaction.status} />
+                      <StatusBadge status={t.status === 'synced' ? 'synced' : 'pending'} />
                     </View>
                   }
                 />
               </Card>
-              {index < filteredTransactions.length - 1 && (
-                <View style={styles.dividerSpacer}>
-                  <Divider />
-                </View>
-              )}
             </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
+          );
+        })
+      )}
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-  },
-  clearButton: {
-    padding: spacing.xs,
-  },
-  filterScroll: {
-    marginTop: spacing.md,
-  },
-  filterContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  filterButton: {
+  filters: { flexDirection: 'row', marginBottom: spacing.md },
+  chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: spacing.sm,
   },
-  filterButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: {
     color: colors.text,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
   },
-  filterButtonTextActive: {
-    color: colors.textOnPrimary,
-  },
-  list: {
-    flex: 1,
-    marginTop: spacing.md,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  dividerSpacer: {
-    marginVertical: spacing.sm,
-  },
-  rightContent: {
-    alignItems: 'flex-end',
-  },
+  chipTextActive: { color: colors.textOnPrimary },
+  summary: { color: colors.textMuted, fontSize: typography.sizes.sm, marginBottom: spacing.md },
+  item: { marginBottom: spacing.sm },
+  right: { alignItems: 'flex-end' },
   amount: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  amountCredit: {
-    color: colors.success,
-  },
-  amountDebit: {
     color: colors.text,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.xs,
   },
 });

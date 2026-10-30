@@ -21,9 +21,13 @@ export default function ItemForm({ initial, submitLabel, onSubmit, onCancel }) {
 
   const submit = () => {
     const e = {};
-    const priceNum = Number(price.replace(',', '.'));
+    const priceText = price.trim().replace(',', '.');
+    const priceNum = Number(priceText);
     if (!name.trim()) e.name = 'Name is required';
-    if (!price.trim() || Number.isNaN(priceNum) || priceNum < 0) e.price = 'Enter a valid price';
+    // Digits with up to 2 decimals only - rejects 'Infinity', '1e9', '0x10', '-5', etc.
+    if (!/^\d+(\.\d{1,2})?$/.test(priceText) || !Number.isFinite(priceNum) || priceNum > 1000000) {
+      e.price = 'Enter a valid price (e.g. 25 or 25.50)';
+    }
     if (!/^\d+$/.test(quantity.trim())) e.quantity = 'Enter a whole number (0 or more)';
     if (!/^\d+$/.test(threshold.trim())) e.threshold = 'Enter a whole number (0 or more)';
     setErrors(e);

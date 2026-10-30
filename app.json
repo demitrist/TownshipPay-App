@@ -10,7 +10,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.demitris.TownPay"
     },
     "android": {
       "adaptiveIcon": {
